@@ -41,7 +41,7 @@ class TrigSpline:
     def plot(self):
         plt.figure(figsize=(8, 6))
         plt.scatter(self.data_x, self.data_y, color='red', label='Data')
-        x_vals = np.linspace(min(self.data_x), max(self.data_x), 100)
+        x_vals = np.linspace(min(self.data_x), max(self.data_x), 10)
         spline_coeffs = self.optimize()
         spline_vals = self.spline_function(spline_coeffs, x_vals)
         plt.plot(x_vals, spline_vals, color='blue', label='Spline')
