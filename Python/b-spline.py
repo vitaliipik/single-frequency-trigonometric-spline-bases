@@ -87,7 +87,7 @@ knots = np.linspace(0, 1, num_knots)
 # Generate points along the curve
 num_points = 1000
 curve_points = [b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 3, num_points)]
-
+curve_points=curve_points[:332]
 # Plot the curve
 import matplotlib.pyplot as plt
 

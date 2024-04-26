@@ -1,6 +1,9 @@
 import re
 
 import numpy as np
+from scipy.interpolate import CubicSpline
+from plotting import plot_basis
+from preset_figure import spiral, duck
 
 
 def basis_function(i, k, t, knots):
@@ -72,44 +75,8 @@ degree =2
 # knots = np.array([0, 0,  0,0,1,   2,3, 4, 5,5 ,5,5])
 # # knots = np.array([0, 1,  2,   3,4, 5, 6,7,8,9,10])
 
-def duck():
 
 
-    points_str = "(-0.2356, 0.3978), (-0.2044, 0.4178), (-0.1711, 0.4289), (-0.1467, 0.4733), (-0.1022, 0.4978), (-0.0533, 0.4933), (-0.0200, 0.4667), (0, 0.4444), (0.0089, 0.4111), (-0.0044, 0.3667), (-0.0333, 0.3311), (-0.0778, 0.2756), (-0.1067, 0.2400), (-0.1178, 0.2000), (-0.0889, 0.1778), (- 0.0511, 0.2156), (0.0156, 0.2533), (0.0844, 0.2778), (0.1467, 0.2956), (0.2111, 0.2911), (0.2556, 0.2644), (0.2578, 0.2222), (0.2267, 0.1911), (0.2667, 0.1800), (0.2622, 0.1467), (0.2222, 0.1111), (0.2467, 0.0933), (0.2267, 0.0556), (0.1800, 0.0289), (0.0200, 0.0244), (-0.1311, 0.0267), (-0.1711, 0.0711), (-0.2133, 0.1356), (-0.2133, 0.2067), (-0.1822, 0.2622), (-0.1311, 0.3178), (-0.1000, 0.3733), (- 0.1533, 0.3733), (-0.2178, 0.3689), (-0.2311, 0.3822), (-0.2356, 0.3978)"
-
-    # Regular expression to extract points
-    pattern = r"\((-?\d+\.\d+),\s*(-?\d+\.\d+)\)"
-
-    # Find all matches of the pattern in the input string
-    matches = re.findall(pattern, points_str)
-
-    # Convert matches to tuple of floats
-    control_points = np.array([[float(x), float(y)] for x, y in matches])
-    return control_points
-
-def butterfly():
-
-    # Define the range of theta
-    theta = np.linspace(0, 2*np.pi, 60)
-
-    # Calculate r for each theta
-    r = (np.sin(theta) + np.sin(3.5 * theta)**3)/1000
-
-    # Convert polar coordinates to Cartesian coordinates
-    x = r * np.cos(theta)
-    y = r * np.sin(theta)
-    control_points =np.array([[x_i, y_i] for x_i, y_i in zip(x, y)])
-    return control_points
-
-def spiral():
-    t = np.linspace(-2 * np.pi, 2 * np.pi, 60)
-
-    # Calculate x, y, and z for each t
-    x = np.sin(3 * t) * np.cos(t)
-    y = np.sin(3 * t) * np.sin(t)
-    z = t
-    control_points = np.array([[x_i, y_i,z_i] for x_i, y_i,z_i in zip(x, y,z)])
-    return control_points
 control_points=duck()
 # degree =2
 # knots = np.array([0,0,0, 1, 2, 3, 4, 3, 3,3])  # Example knot vector
@@ -119,9 +86,9 @@ control_points=duck()
 # knots = np.array([0, 0,  0,0,1,   2,3, 4, 5,5 ,5,5])
 knots = np.array([0, 1,  2,   3,4, 5, 6,7,8,9,10])
 num_knots = len(control_points) + degree + 1
-knots = np.linspace(0, 3, num_knots)
+knots = np.linspace(0, 1, num_knots-4)
 # knots = clamped_knot_vector(6,degree)
-# knots =np.concatenate([[0]*2,knots,[1]*2])
+knots =np.concatenate([[0]*2,knots,[1]*2])
 
 # knots[1:3]=0
 # knots[-3:-1]=knots[-1]
@@ -129,42 +96,7 @@ knots = np.linspace(0, 3, num_knots)
 # Generate points along the curve
 num_points = 1000
 curve_points = np.array([b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 3, num_points)])
-import matplotlib.pyplot as plt
-# curve_points=curve_points[:998]
-if len(curve_points[0])==3:
 
-    # Create a 3D plot
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
+curve_points=curve_points[:333]
 
-    # Plot the curve
-    ax.plot(control_points[:,0],control_points[:,1],control_points[:,2],'ro-', label='Three-dimensional three-leaf rose curve')
-    ax.plot(curve_points[:,0],curve_points[:,1],curve_points[:,2],'b-', label='Three-dimensional three-leaf rose curve')
-
-    # Set labels and title
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_title('Three-dimensional three-leaf rose curve')
-
-    # Add a legend
-    ax.legend()
-
-    # Show the plot
-    plt.show()
-else:
-
-    # Plot the curve
-    import matplotlib.pyplot as plt
-
-    curve_points = np.array(curve_points)
-    plt.plot(control_points[:, 0], control_points[:, 1], 'ro-', label='Control Points')
-    # curve_points=curve_points[:333]
-    plt.plot(curve_points[:, 0], curve_points[:, 1], 'b-', label='tb-spline Curve')
-    plt.legend()
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('tB-spline Curve')
-    plt.grid(True)
-    plt.axis('equal')
-    plt.show()
+plot_basis(control_points,curve_points)
