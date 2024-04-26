@@ -3,68 +3,23 @@ import subprocess
 
 import numpy as np
 from plotting import plot_basis
-from preset_figure import spiral
+from preset_figure import spiral, duck
 
+WSL_DIR = r"/home/vitalii/cuda-mch/"
 INPUT_FILE_CONTROL_POINTS = r"\\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\control_points.txt"
+INPUT_FILE_CONTROL_POINTS_WS = r"\home\vitalii\cuda-mch\control_points.txt"
+INPUT_FILE_CONTROL_POINTS_WS = r"~/cuda-mch/control_points.txt"
 INPUT_FILE_KNOTS = r"\\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\knots.txt"
+INPUT_FILE_KNOTS_WS = r"\home\vitalii\cuda-mch\knots.txt"
+INPUT_FILE_KNOTS_WS = r"~/cuda-mch/knots.txt"
 OUTPUT_FILE = r"\\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\result.txt"
-
-def basis_function(i, k, t, knots):
-    """
-    Calculate the i-th B-spline basis function of order k at parameter t
-    """
-    if k == 1:
-        return 1.0 if knots[i] <= t < knots[i + 1] else 0.0
-
-    denom1 = knots[i + k - 1] - knots[i]
-    denom2 = knots[i + k] - knots[i + 1]
-
-    coeff1 = 0.0 if denom1 == 0.0 else np.sin((t - knots[i])/2) / np.sin(denom1/2)
-    coeff2 = 0.0 if denom2 == 0.0 else np.sin((knots[i + k] - t)/2) / np.sin((knots[i + k] - knots[i+1])/2)
-
-    return coeff1 * basis_function(i, k - 1, t, knots) + coeff2 * basis_function(i + 1, k - 1, t, knots)
+OUTPUT_FILE_WS = r"~/cuda-mch/result.txt"
 
 
-def b_spline_curve(control_points, degree, knots, t):
-    """
-    Calculate the B-spline curve at parameter t
-    """
-    n = len(control_points) - 1  # number of control points
-    result = np.zeros_like(control_points[0], dtype=float)  # Initialize result with float dtype
-
-    for i in range(n + 1):
-        basis = basis_function(i, degree + 1, t, knots)
-        result += control_points[i] * basis
-
-    return result
-
-
-def open_knot_vector(num_control_points, degree):
-    """
-    Generate an open knot vector for a B-spline curve
-    """
-    num_knots = num_control_points + degree + 1
-    knots = np.zeros(num_knots)
-    knots[:degree + 1] = 0
-    knots[-(degree + 1):] = 1
-    inner_knots = np.linspace(0, 1, num_control_points - degree - 1, endpoint=False)
-    knots[degree + 1:num_control_points] = inner_knots
-    return knots
-def clamped_knot_vector(num_control_points, degree):
-    """
-    Generate a clamped knot vector for a B-spline curve
-    """
-    num_knots = num_control_points + degree + 1
-    knots = np.zeros(num_knots)
-    knots[:degree + 1] = 0
-    knots[-(degree + 1):] = 1
-    inner_knots = np.linspace(0, 1, num_control_points - degree - 1)
-    knots[degree + 1:num_control_points] = inner_knots
-    return knots
 
 def write_points(points, filename):
     with open(filename, 'w') as file:
-        file.write(str(len(points)))
+        file.write(str(len(points))+"\n")
 
         for point in points:
             if len(point) == 3:
@@ -74,8 +29,8 @@ def write_points(points, filename):
 
 def write_knots(knots, filename):
     with open(filename, 'w') as file:
-        file.write(str(len(knots)))
-        for point in zip(knots):
+        file.write(str(len(knots))+"\n")
+        for point in knots:
             file.write(f"{point}\n")
 
 def read_points(filename):
@@ -90,39 +45,60 @@ def read_points(filename):
 def main():
 
 
-    control_points=spiral()
+    control_points=duck()
 
 
     degree =2
+    alpha=np.pi/4
+    # alpha=1.33
 
     # Generate points along the curve
     num_points = 1000
 
-    num_knots = len(control_points) + degree + 1
-    knots = np.linspace(0, 1, num_knots-4)
-
-    knots =np.concatenate([[0]*2,knots,[1]*2])
-
+    p = len(control_points)
+    knots = [0, 0, 0]
+    for i in range(3, p):
+        knots += [(i - 2) * alpha]
+    knots += [(p - 1) * alpha] * 3
     write_points(control_points, INPUT_FILE_CONTROL_POINTS)
     write_knots(knots, INPUT_FILE_KNOTS)
 
 
-
+    space=80
 
 
     # command = ["mpiexec", "-np", str(num_procs), "./cpp/hello-world", str(N)]
     # result = subprocess.run(command, capture_output=True, text=True)
+    # command = ["wsl", "./cuda-mch/test", str(degree), str(num_points), INPUT_FILE_CONTROL_POINTS, INPUT_FILE_KNOTS,
+    #            OUTPUT_FILE]
+    # result=subprocess.run(command, capture_output=True, text=True)
+    # print(result)
+    # command = ["wsl","./cuda-mch/cuda_t_2_b",str(degree),str(num_points),str(alpha),INPUT_FILE_CONTROL_POINTS,INPUT_FILE_KNOTS,OUTPUT_FILE]
 
-    command = ["wsl","./cuda-mch/test",str(degree),str(num_points),INPUT_FILE_CONTROL_POINTS,INPUT_FILE_KNOTS,OUTPUT_FILE]
-    subprocess.run(command, capture_output=True, text=True)
+
+
+    command = ["wsl","nvcc",f"{WSL_DIR}/cuda-t-2-b.cu","-o",f"{WSL_DIR}/a.out"]
+    result=subprocess.run(command, capture_output=True, text=True)
+    print(result)
+    command2 = ["wsl",fr"{WSL_DIR}/a.out",str(degree),str(num_points),str(alpha),str(space),INPUT_FILE_CONTROL_POINTS_WS,INPUT_FILE_KNOTS_WS,OUTPUT_FILE_WS]
+    result=subprocess.run(command2, capture_output=True, text=True)
+    print(result)
+
+
 
     # curve_points = np.array([b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 3, num_points)])
 
-    curve_points=read_points(OUTPUT_FILE)
+    curve_points=np.array(read_points(OUTPUT_FILE))
+    curve_points = curve_points[~np.all(curve_points == 0, axis=1)]
 
-    curve_points=curve_points[:333]
+    # curve_points=curve_points[:333]
 
     plot_basis(control_points,curve_points)
 
 if __name__ == '__main__':
     main()
+    #'(wsl nvcc /home/vitalii/cuda-mch//cuda-t-2-b.cu -o /home/vitalii/cuda-mch//a.out ) -and (wsl /home/vitalii/cuda-mch//a.out 2 1000 0.7853981633974483 ~/cuda-mch/control_points.txt ~/cuda-mch/knots.txt ~/cuda-mch/result.txt )'
+    # (wsl nvcc /home/vitalii/cuda-mch//cuda-t-2-b.cu -o /home/vitalii/cuda-mch//a.out ) && (wsl /home/vitalii/cuda-mch//a.out 2 1000 0.7853981633974483 \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\control_points.txt \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\knots.txt \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\result.txt )
+#(wsl nvcc /home/vitalii/cuda-mch//cuda-t-2-b.cu ) && (wsl /home/vitalii/cuda-mch//a.out 2 1000 0.7853981633974483 \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\control_points.txt \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\knots.txt \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\result.txt )
+# wsl /home/vitalii/cuda-mch//a.out 2 1000 0.7853981633974483 \home\vitalii\cuda-mch\control_points.txt \home\vitalii\cuda-mch\knots.txt \home\vitalii\cuda-mch\result.txt
+# (wsl nvcc /home/vitalii/cuda-mch//cuda-t-2-b.cu ) -and (wsl /home/vitalii/cuda-mch//a.out 2 1000 0.7853981633974483 \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\control_points.txt \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\knots.txt \\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\result.txt )

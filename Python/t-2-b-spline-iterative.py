@@ -68,22 +68,6 @@ knots = np.linspace(0, 1, num_knots-4)
 # knots = clamped_knot_vector(6,degree)
 knots =np.concatenate([[0]*2,knots,[1]*2])
 
-import numpy as np
-
-def N0_squared(alpha, p):
-    u = np.linspace(0, (p + 3 - 1) * alpha, p + 3)
-    return np.piecewise(u, [u < 0, (u >= 0) & (u <= (p - 1) * alpha), u > (p - 1) * alpha],
-                        [lambda u: 1 - (u / (p * alpha)) ** 2, lambda u: 0, lambda u: 0])
-
-def N1_squared(alpha, p):
-    u = np.linspace(0, (p + 3 - 1) * alpha, p + 3)
-    return np.piecewise(u, [u < 0, (u >= 0) & (u <= (p - 1) * alpha), u > (p - 1) * alpha],
-                        [lambda u: (u / (p * alpha)) ** 2, lambda u: 1 - 2 * (u / (p * alpha)) ** 2, lambda u: 0])
-
-def N2_squared(alpha, p):
-    u = np.linspace(0, (p + 3 - 1) * alpha, p + 3)
-    return np.piecewise(u, [u < 0, (u >= 0) & (u <= (p - 1) * alpha), u > (p - 1) * alpha],
-                        [lambda u: 0, lambda u: 2 * (u / (p * alpha)) ** 2 - 2 * (u / (p * alpha)) + 1, lambda u: 0])
 
 # Example usage
 # alpha = np.pi/2
