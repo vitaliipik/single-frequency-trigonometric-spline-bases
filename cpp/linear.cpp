@@ -67,7 +67,7 @@ void readControlPoints(const std::string& fileName, std::vector<double>& control
 
 int main(int argc, char* argv[]) {
     if (argc < 8) {
-        std::cerr << "Usage: " << argv[0] << " numControlPoints degree numKnots numPoints alpha inputFilePoints inputFileKnots outputFile" << std::endl;
+        std::cerr << "Usage: " << argv[0] << "degree numPoints alpha space inputFilePoints inputFileKnots outputFile" << std::endl;
         return 1;
     }
 

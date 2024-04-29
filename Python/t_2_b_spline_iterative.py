@@ -83,7 +83,7 @@ alpha= np.pi/4
 # print("N0^2:", N0_sq)
 # print("N1^2:", N1_sq)
 # print("N2^2:", N2_sq)
-control_points=star()
+control_points=duck()
 # control_points = np.concatenate((control_points ,control_points [0:2]), axis=0)
 # knots=u = np.linspace(0, alpha, p + 3)
 # knots=np.array([0,0,0,1*alpha,2*alpha,3*alpha,4*alpha,4*alpha,4*alpha,4*alpha])
@@ -129,7 +129,8 @@ start = time.time()
 
 
 num_points = 3000
-curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, 160, num_points)])
+space=20
+curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, space, num_points)])
 
 
 end = time.time()
