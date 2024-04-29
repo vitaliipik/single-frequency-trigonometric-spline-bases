@@ -1,8 +1,12 @@
 import re
 import subprocess
+import time
 
 import numpy as np
-from plotting import plot_basis
+import pandas as pd
+from matplotlib import pyplot as plt
+
+from plotting import plot_basis, line_plot
 from preset_figure import spiral, duck
 
 WSL_DIR = r"/home/vitalii/cuda-mch/"
@@ -16,10 +20,9 @@ OUTPUT_FILE = r"\\wsl.localhost\Ubuntu\home\vitalii\cuda-mch\result.txt"
 OUTPUT_FILE_WS = r"~/cuda-mch/result.txt"
 
 
-
 def write_points(points, filename):
     with open(filename, 'w') as file:
-        file.write(str(len(points))+"\n")
+        file.write(str(len(points)) + "\n")
 
         for point in points:
             if len(point) == 3:
@@ -27,11 +30,13 @@ def write_points(points, filename):
             else:
                 file.write(f"{point[0]} {point[1]}\n")
 
+
 def write_knots(knots, filename):
     with open(filename, 'w') as file:
-        file.write(str(len(knots))+"\n")
+        file.write(str(len(knots)) + "\n")
         for point in knots:
             file.write(f"{point}\n")
+
 
 def read_points(filename):
     points = []
@@ -42,14 +47,12 @@ def read_points(filename):
 
     return points
 
+
 def main():
+    control_points = duck()
 
-
-    control_points=duck()
-
-
-    degree =2
-    alpha=np.pi/4
+    degree = 2
+    alpha = np.pi / 4
     # alpha=1.33
 
     # Generate points along the curve
@@ -63,9 +66,7 @@ def main():
     write_points(control_points, INPUT_FILE_CONTROL_POINTS)
     write_knots(knots, INPUT_FILE_KNOTS)
 
-
-    space=80
-
+    space = 100
 
     # command = ["mpiexec", "-np", str(num_procs), "./cpp/hello-world", str(N)]
     # result = subprocess.run(command, capture_output=True, text=True)
@@ -75,25 +76,53 @@ def main():
     # print(result)
     # command = ["wsl","./cuda-mch/cuda_t_2_b",str(degree),str(num_points),str(alpha),INPUT_FILE_CONTROL_POINTS,INPUT_FILE_KNOTS,OUTPUT_FILE]
 
-
-
-    command = ["wsl","nvcc",f"{WSL_DIR}/cuda-t-2-b.cu","-o",f"{WSL_DIR}/a.out"]
-    result=subprocess.run(command, capture_output=True, text=True)
+    command = ["wsl", "nvcc", f"{WSL_DIR}/cuda-t-2-b.cu", "-o", f"{WSL_DIR}/a.out"]
+    result = subprocess.run(command, capture_output=True, text=True)
     print(result)
-    command2 = ["wsl",fr"{WSL_DIR}/a.out",str(degree),str(num_points),str(alpha),str(space),INPUT_FILE_CONTROL_POINTS_WS,INPUT_FILE_KNOTS_WS,OUTPUT_FILE_WS]
-    result=subprocess.run(command2, capture_output=True, text=True)
-    print(result)
+    space_array = [1e2, 1e4, 1e6,1e8,1e10]
+    space_array = [1e2, 1e4, 1e6]
+    space_array = [1e2, 1e4]
+    result_arr = pd.DataFrame(np.zeros((len(space_array), 3)))
+    result_arr.columns=["number", "cuda", "linear"]
+    result_arr.iloc[:, 0] = pd.Series(space_array)
+    for index, i in enumerate(space_array):
+
+
+        command2 = ["wsl", fr"{WSL_DIR}/a.out", str(degree), str(i), str(alpha), str(space),
+                    INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
+        result = subprocess.run(command2, capture_output=True, text=True)
+        result_arr.iloc[index, 1] = float(result.stdout)
+        print(result)
+
+        command2 = ["wsl", fr"{WSL_DIR}/cuda_t_2_b_l", str(degree), str(i), str(alpha), str(space),
+                    INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
+        result = subprocess.run(command2, capture_output=True, text=True)
+        result_arr.iloc[index, 2] = float(result.stdout)
 
 
 
+
+
+
+        print(result)
+
+    command2 = ["wsl", fr"{WSL_DIR}/a.out", str(degree), str(i), str(alpha), str(space),
+               INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
+    result = subprocess.run(command2, capture_output=True, text=True)
+    #
+    # table = np.concatenate((space_array, result_arr), axis=1)
+    print(result_arr.to_string())
+    line_plot(result_arr)
     # curve_points = np.array([b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 3, num_points)])
 
-    curve_points=np.array(read_points(OUTPUT_FILE))
+    curve_points = np.array(read_points(OUTPUT_FILE))
     curve_points = curve_points[~np.all(curve_points == 0, axis=1)]
 
     # curve_points=curve_points[:333]
-
+    plt.show()
     plot_basis(control_points,curve_points)
+    plt.show()
+
 
 if __name__ == '__main__':
     main()

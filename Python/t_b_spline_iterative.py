@@ -3,7 +3,7 @@ import re
 import numpy as np
 from scipy.interpolate import CubicSpline
 from plotting import plot_basis
-from preset_figure import spiral, duck
+from preset_figure import spiral, duck, star
 
 
 def basis_function(i, k, t, knots):
@@ -22,7 +22,7 @@ def basis_function(i, k, t, knots):
     return coeff1 * basis_function(i, k - 1, t, knots) + coeff2 * basis_function(i + 1, k - 1, t, knots)
 
 
-def b_spline_curve(control_points, degree, knots, t):
+def t_b_spline_curve(control_points, degree, knots, t):
     """
     Calculate the B-spline curve at parameter t
     """
@@ -77,7 +77,7 @@ degree =2
 
 
 
-control_points=duck()
+control_points=star()
 # degree =2
 # knots = np.array([0,0,0, 1, 2, 3, 4, 3, 3,3])  # Example knot vector
 # knots = clamped_knot_vector(6,degree)
@@ -95,7 +95,7 @@ knots =np.concatenate([[0]*2,knots,[1]*2])
 
 # Generate points along the curve
 num_points = 1000
-curve_points = np.array([b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 3, num_points)])
+curve_points = np.array([t_b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 3, num_points)])
 
 curve_points=curve_points[:333]
 

@@ -52,6 +52,20 @@ def spiral_2():
     control_points = np.array([[x_i, y_i, z_i] for x_i, y_i, z_i in zip(x, y, z)])
     return control_points
 
+def star():
+    x_regular = [0, 0.951, -0.951, 0.588, -0.588]
+    y_regular = [1, 0.309, 0.309, -0.809, -0.809]
+
+    # Additional points near the center
+    x_center = [0, 0.4755, -0.4755, 0.294, -0.294]
+    y_center = [0.5, 0.1545, 0.1545, -0.4045, -0.4045]
+
+    # Combine x and y arrays into a single array of points
+    x = x_regular + x_center
+    y = y_regular + y_center
+    control_points = np.array([[x_i, y_i] for x_i, y_i in zip(x, y)])
+    return control_points
+
 
 def gerb():
     points = [

@@ -3,7 +3,7 @@ import re
 import numpy as np
 from scipy.interpolate import CubicSpline
 from plotting import plot_basis
-from preset_figure import spiral, duck
+from preset_figure import spiral, duck, star
 
 
 def basis_function(i, k, t, knots,alpha):
@@ -32,7 +32,8 @@ def basis_function(i, k, t, knots,alpha):
     return coeff1(i) * basis_function(i, k - 1, t, knots,alpha) + p * basis_function(i + 1, k - 1, t, knots,alpha)
 
 
-def b_spline_curve(control_points, degree, knots, t,alpha):
+def t_2_b_spline_curve(control_points, degree, knots, t,alpha):
+
     """
     Calculate the B-spline curve at parameter t
     """
@@ -56,6 +57,8 @@ knots = np.array([1, 1, 1, 0, 1, 2, 3, 3, 4, 4,4,4])  # Example knot vector
 
 # Example usage:
 control_points = np.array([[0, 0], [0,1], [3, 4], [6, 0], [7, 4]])
+control_points = np.concatenate((control_points ,control_points [0:2]), axis=0)
+
 degree =2
 knots = np.array([0,0,0, 1, 2, 3, 4, 3, 3,3])  # Example knot vector
 
@@ -80,28 +83,58 @@ alpha= np.pi/4
 # print("N0^2:", N0_sq)
 # print("N1^2:", N1_sq)
 # print("N2^2:", N2_sq)
-control_points=duck()
-
+control_points=star()
+# control_points = np.concatenate((control_points ,control_points [0:2]), axis=0)
 # knots=u = np.linspace(0, alpha, p + 3)
 # knots=np.array([0,0,0,1*alpha,2*alpha,3*alpha,4*alpha,4*alpha,4*alpha,4*alpha])
-p = len(control_points)
-knots=[0,0,0]
-for i in range(3,p):
-    knots+=[(i-2)*alpha]
-knots+=[(p-1)*alpha]*3
+p = len(control_points)-1
+
+def u():
+
+
+    knots=[0,0,0]
+    for i in range(3,p+1):
+        knots+=[(i-2)*alpha]
+    knots+=[(p-1)*alpha]*3
+    # knots+=knots[0:2]
+
+    return knots
+
+def pi():
+
+
+    knots=[]
+    for i in range(p+3):
+        knots+=[i*alpha]
+    return knots
+
+knots=u()
+# knots=pi()
+
+
+
+# knots=knots[:-1]
 # knots=np.array([0,0,0,1*alpha,2*alpha,3*alpha,4*alpha,5*alpha,5*alpha,5*alpha])
 # knots=np.array([0,alpha,2*alpha,3*alpha,4*alpha,5*alpha,6*alpha,7*alpha])
-# knots=[]
-# for i in range(p+3):
-#     knots+=[i*alpha]
+
 
 #
 
 # Generate points along the curve
-num_points = 1000
-curve_points= np.array([b_spline_curve(control_points, degree, knots, t,alpha) for t in np.linspace(0, 80, num_points)])
-curve_points =curve_points[~np.all(curve_points==0, axis=1)]
+import time
 
+start = time.time()
+
+
+
+
+num_points = 3000
+curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, 160, num_points)])
+
+
+end = time.time()
+print(end - start)
+curve_points =curve_points[~np.all(curve_points==0, axis=1)]
 # curve_points=curve_points[:333]
 
 plot_basis(control_points,curve_points)

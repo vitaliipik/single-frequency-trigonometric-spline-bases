@@ -25,8 +25,7 @@ def plot_basis(control_points, curve_points, is_control=True):
         # Add a legend
         ax.legend()
 
-        # Show the plot
-        plt.show()
+
     else:
 
         curve_points = np.array(curve_points)
@@ -40,4 +39,21 @@ def plot_basis(control_points, curve_points, is_control=True):
         plt.title('tB-spline Curve')
         plt.grid(True)
         plt.axis('equal')
-        plt.show()
+    plt.show()
+
+
+def line_plot(table):
+
+    for i in range(1,len(table.iloc[0])):
+        plt.plot(  table.iloc[:, 0],table.iloc[:, i], 'o-',label=table.columns[i])
+    plt.legend()
+    # plt.xlabel('Time Elapsed (seconds)')
+    # plt.ylabel('number of points')
+    plt.xlabel('number of points')
+    plt.ylabel('Time Elapsed (seconds)')
+    plt.title('time for different method')
+    plt.legend()
+
+    plt.tight_layout()
+    # plt.grid(True)
+    # plt.axis('equal')
