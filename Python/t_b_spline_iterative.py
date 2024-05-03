@@ -78,6 +78,7 @@ degree =2
 
 
 control_points=star()
+
 # degree =2
 # knots = np.array([0,0,0, 1, 2, 3, 4, 3, 3,3])  # Example knot vector
 # knots = clamped_knot_vector(6,degree)

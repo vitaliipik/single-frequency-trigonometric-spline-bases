@@ -133,37 +133,67 @@ plot_basis(np.array(control_points),curve_points_b)
 
 
 
-
+degree=2
 
 control_points=duck()
 control_points = np.concatenate((control_points ,control_points [0:2]), axis=0)
-p = len(control_points)-1
+def u():
 
-space_end=30
-knots=u()
-# knots=t
+
+    knots=[0,0,0]
+    for i in range(3,p+1):
+        knots+=[(i-2)*alpha]
+    knots+=[(p-1)*alpha]*3
+    # knots+=knots[0:2]
+
+    return knots
+p = len(control_points)-2
+num_points=310
+space_end=50
 alpha=1
 
-curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, space_end, num_points)])
-curve_points_b= np.array([ b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, space_end, num_points)])
-plot_basis(curve_points_b,control_points)
+knots=u()
+# knots=t
+# alpha=np.pi/4
 
-# curve_points_t_2_b =curve_points[~np.all(curve_points==0, axis=1)]
-curve_points_t_2_b =curve_points
+curve_points_b= np.array([ b_spline_curve(control_points[:-1], degree, knots, t) for t in np.linspace(0, space_end, num_points)])
+curve_points_b =curve_points_b[~np.all(curve_points_b==0, axis=1)]
+
+
+
+plot_basis(curve_points_b,control_points)
+p = len(control_points)-1
+num_points=1010
+space_end=400
+alpha=1
+
+knots=u()
+curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, space_end, num_points)])
+
+curve_points_t_2_b =curve_points[~np.all(curve_points==0, axis=1)]
+
+curve_points_t_2_b=curve_points_t_2_b[:-6]
+
+
+# curve_points_t_2_b =curve_points
+plot_basis(control_points,curve_points_b,is_control=False)
+plot_basis(control_points,curve_points_t_2_b,is_control=False)
+plot_basis(curve_points_b,control_points)
 plot_basis(curve_points_t_2_b,control_points)
 
 # error1 = np.linalg.norm(curve_points_t_b - curve_points_b, axis=1)  # Error between result1 and result2
 error2 = np.linalg.norm(curve_points_t_2_b - curve_points_b, axis=1)  # Error between result1 and result3
+error2 = error2[5:]
 # error3 = np.linalg.norm(curve_points_t_2_b - curve_points_t_b, axis=1)  # Error between result2 and result3
 print(np.sum(error2)/len(error2))
 # Plotting
 plt.figure(figsize=(8, 6))
 # plt.plot(error1, label='Error between Algorithm 1 and 2')
-plt.plot(error2, label='Error between Algorithm 1 and 3')
+plt.plot(error2, label='Error between scipy and t-2-b-spline')
 # plt.plot(error3, label='Error between Algorithm 2 and 3')
 plt.xlabel('Point Index')
 plt.ylabel('Error')
-plt.title('Error Comparison Between Algorithms')
+plt.title('Error Comparison')
 plt.legend()
 plt.grid(True)
 plt.show()

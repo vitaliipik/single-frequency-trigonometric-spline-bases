@@ -57,7 +57,8 @@ knots = np.array([1, 1, 1, 0, 1, 2, 3, 3, 4, 4,4,4])  # Example knot vector
 
 # Example usage:
 control_points = np.array([[0, 0], [0,1], [3, 4], [6, 0], [7, 4]])
-control_points = np.concatenate((control_points ,control_points [0:2]), axis=0)
+control_points = np.array([[-1, 0],[0, 0], [1,1], [2,0], [3, 6], [4, 0], [5, 0]])
+# control_points = np.concatenate((control_points ,control_points [0:2]), axis=0)
 
 degree =2
 knots = np.array([0,0,0, 1, 2, 3, 4, 3, 3,3])  # Example knot vector
@@ -128,8 +129,8 @@ start = time.time()
 
 
 
-num_points = 3000
-space=20
+num_points = 500
+space=50
 curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, space, num_points)])
 
 

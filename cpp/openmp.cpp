@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <fstream>
+#include <omp.h>
 #ifdef _WIN32
 #include <omp.h>
 #elif __APPLE__
@@ -44,7 +45,7 @@ void bSplineCurve(double* controlPoints, int numControlPoints, int degree, doubl
     for (int idx = 0; idx < numPoints; ++idx) {
         double t = idx * space / numPoints;
         double result[2] = {0, 0};
-#pragma omp parallel for
+
         for (int i = 0; i < numControlPoints + 2 - degree; ++i) {
             double basis = basisFunction(i, degree, t, knots, alpha);
             for (int j = 0; j < numAxes; ++j) {

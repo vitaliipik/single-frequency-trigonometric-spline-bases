@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from PIL._imaging import display
+from mpl_interactions import zoom_factory, panhandler
+from mpl_interactions import interactive_plot
 
 
 def plot_basis(control_points, curve_points, is_control=True):
@@ -43,9 +47,10 @@ def plot_basis(control_points, curve_points, is_control=True):
 
 
 def line_plot(table):
-
+    with plt.ioff():
+        figure, axis = plt.subplots()
     for i in range(1,len(table.iloc[0])):
-        plt.plot(  table.iloc[:, 0],table.iloc[:, i], 'o-',label=table.columns[i])
+        interactive_plot(  table.iloc[:, 0],table.iloc[:, i], 'o-',label=table.columns[i])
     plt.legend()
     # plt.xlabel('Time Elapsed (seconds)')
     # plt.ylabel('number of points')
@@ -55,5 +60,52 @@ def line_plot(table):
     plt.legend()
 
     plt.tight_layout()
+    disconnect_zoom = zoom_factory(axis)
+    pan_handler = panhandler(figure)
+
     # plt.grid(True)
     # plt.axis('equal')
+    plt.show()
+from lets_plot import *
+
+
+
+def line_plot_upd(table):
+
+    df = pd.melt(table, id_vars=['number'], value_vars=table.columns[1:])
+    p = (ggplot(df,aes(x="number",y="value", group='variable'))+ \
+    geom_line(aes(color='variable'), size=1, alpha=0.5)+
+         geom_point()+ scale_fill_brewer(type='seq'))
+
+    p.show()
+    # plt.grid(True)
+    # plt.axis('equal')
+def bar_plot(table,number,text="speedup",y_tick=False):
+    bar_width = 0.15
+    index = number
+    index = np.arange(len(index))
+    for i in range(len(table.iloc[0])):
+        plt.bar(index + i * bar_width, table.iloc[:,i], bar_width,label=table.columns[i])
+    plt.title('Performance Comparison')
+    plt.xlabel('Dataset')
+    plt.xticks(index + bar_width * (len(table) - 1) / 2, number)
+    if y_tick:
+        plt.yticks(np.arange(0, 3800, 300))
+    plt.ylabel(text)
+    plt.legend(title='Method')
+    plt.tight_layout()
+    plt.show()
+
+
+def bar_plot_upt(table, number, text="speedup"):
+    bar_width = 0.15
+    index = table.index
+    index = np.arange(len(index))
+
+    p=    ggplot(table) + \
+        geom_bar(aes(x='number', y='y', fill='Method'), stat='identity', position='dodge', width=bar_width) + \
+        scale_fill_discrete(name='Method') + \
+        ggtitle('Performance Comparison') + \
+        xlab('Dataset') + \
+        ylab(text)
+    p.show()

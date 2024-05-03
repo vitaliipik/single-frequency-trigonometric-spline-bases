@@ -1,7 +1,7 @@
 import numpy as np
 import yfinance as yf
 
-from Python.plotting import plot_basis
+from Python.plotting import plot_basis, line_plot_upd, bar_plot, bar_plot_upt
 from t_2_b_spline_iterative import t_2_b_spline_curve
 
 
@@ -105,42 +105,118 @@ def main():
     # print(result)
     # command = ["wsl","./cuda-mch/cuda_t_2_b",str(degree),str(num_points),str(alpha),INPUT_FILE_CONTROL_POINTS,INPUT_FILE_KNOTS,OUTPUT_FILE]
 
+    command = ["wsl", "g++", "-Wall", "-g", "-o", f"{WSL_DIR}/openmp", f"{WSL_DIR}/openmp.cpp",f"-fopenmp"]
+    result = subprocess.run(command, capture_output=True, text=True)
+    print(result)
+
     command = ["wsl", "nvcc", f"{WSL_DIR}/cuda-t-2-b.cu", "-o", f"{WSL_DIR}/a.out"]
     result = subprocess.run(command, capture_output=True, text=True)
     print(result)
     # space_array = [1e2, 1e4, 1e6,1e8,1e10]
     space_array = [1e2, 1e4, 1e6]
-    # space_array = [1e2]
-    result_arr = pd.DataFrame(np.zeros((len(space_array), 2)))
-    result_arr.columns=["number", "cuda"]
+    # space_array = [1e2, 1e4]
+    array_linear=[0.011516,1.68596,156.77,1381.1]
+    space_array = [1e2,1e3,1e4]
+    space_array = [1e2,1e4,1e6,1e7]
+    space_array = [1e2,1e4,1e6]
+    space_array = [1e5]
+    # space_array = [1e2,1e3]
+    thread=[2,4,8,16]
+    thread=[4]
+    result_arr = pd.DataFrame(np.zeros((len(space_array),7)))
+    result_arr.columns=["number", "cuda","openmp 2","openmp 4","openmp 8","openmp 16","linear"]
     result_arr.iloc[:, 0] = pd.Series(space_array)
     for index, i in enumerate(space_array):
 
 
-        command2 = ["wsl", fr"{WSL_DIR}/a.out", str(degree), str(i), str(alpha), str(space),
-                    INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
-        result = subprocess.run(command2, capture_output=True, text=True)
-        result_arr.iloc[index, 1] = float(result.stdout)
+        # command2 = ["wsl", fr"{WSL_DIR}/a.out", str(degree), str(i), str(alpha), str(space),
+        #             INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
+        # result = subprocess.run(command2, capture_output=True, text=True)
+        # print(result)
+        # result_arr.iloc[index, 1] = float(result.stdout)
+
+
+        for j_i,j in enumerate(thread):
+
+
+            command2 = ["wsl", fr"{WSL_DIR}/openmp", str(degree), str(i), str(alpha), str(space),
+                        INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS, str(j)]
+            result = subprocess.run(command2, capture_output=True, text=True)
+            print(result)
+            result_arr.iloc[index, j_i+2] = float(result.stdout)
+
+
+
+        # command2 = ["wsl", fr"{WSL_DIR}/cuda_t_2_b_l", str(degree), str(i), str(alpha), str(space),
+        #             INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
+        # result = subprocess.run(command2, capture_output=True, text=True)
+        # result_arr.iloc[index, 6] = float(result.stdout)
+        result_arr.iloc[index, 6] = array_linear[index]
+
+        curve_points = np.array(read_points(OUTPUT_FILE))
+        curve_points = curve_points[~np.all(curve_points == 0, axis=1)]
+
+        # line_plot_upd(result_arr)
+        # bar_plot(speedups,space_array,y_tick=True)
+        # bar_plot(effect,space_array,text="effectivity")
+        # # bar_plot_upt(speedups,space_array)
+        # line_plot(result_arr)
+        # Plotting
+        fig, ax_main = plt.subplots(figsize=(25, 6))
+
+        # ax_main.plot(curve_points[:,0], curve_points[:,1], 'ro', label='B-spline Approximation')
+
+        # ax_main.plot(x, data.iloc[:, 3], 'bo-', label='Closing Prices')
+        ax_main.plot(curve_points[:, 0], curve_points[:, 1], 'r-', label='T-2-B-spline Approximation')
+        # ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='Closing price')
+        # Adding volume traded on the right side
+        ax_volume = ax_main.twinx()
+        lims = ax_main.get_xlim()
+        i = np.where((x > lims[0]) & (x < lims[1]))[0]
+        ax_main.set_ylim(y[i].min() - 5, y[i].max() + 5)
+        # ax_main.set_ylim(ymin=150)
+        # ax_volume.bar(np.arange(len(data)), data.iloc[:,3], color='orange', alpha=0.5, label='Closing Prices')
+        ax_main.bar(control_points[:, 0], control_points[:, 1], color='orange', alpha=0.5, label='Closing Prices')
+        ax_main.set_ylabel('Closing Prices', color='orange')
+
+        # Setting labels and legend
+        ax_main.set_xticks(x[::10])
+        ax_main.set_xticklabels(data.index[::10])
+        ax_main.set_xlabel('Date')
+        ax_main.set_ylabel('Closing Prices')
+        ax_main.legend(loc='upper left')
+        plt.title('Stock Prices with T-2-B-spline Approximation and Volume Traded')
+        plt.gcf().autofmt_xdate()
+        plt.show()
         print(result)
 
+    print(result_arr[list(result_arr.columns[1:])])
+    # speedups = result_arr['linear']/(result_arr[list(result_arr.columns[1:])])
+    speedups =(1/result_arr[list(result_arr.columns[1:])]).div(1/result_arr['linear'],axis=0)
+    speedups=speedups.iloc[:,:-1]
+    # efficiencies = speedups / best_implementation
 
-
-        print(result)
-
-
+    effect=speedups.iloc[:,1:].div(thread,axis=1)
     print(result_arr.to_string())
+    print(speedups.to_string())
+    print(effect.to_string())
 
     curve_points = np.array(read_points(OUTPUT_FILE))
     curve_points = curve_points[~np.all(curve_points == 0, axis=1)]
 
+    # line_plot_upd(result_arr)
+    # bar_plot(speedups,space_array,y_tick=True)
+    # bar_plot(effect,space_array,text="effectivity")
+    # # bar_plot_upt(speedups,space_array)
+    # line_plot(result_arr)
     # Plotting
     fig, ax_main = plt.subplots(figsize=(25, 6))
 
     # ax_main.plot(curve_points[:,0], curve_points[:,1], 'ro', label='B-spline Approximation')
 
     # ax_main.plot(x, data.iloc[:, 3], 'bo-', label='Closing Prices')
-    ax_main.plot(curve_points[:,0], curve_points[:,1], 'r-', label='B-spline Approximation')
-    ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='Closing price')
+    ax_main.plot(curve_points[:,0], curve_points[:,1], 'r-', label='T-2-B-spline Approximation')
+    # ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='Closing price')
     # Adding volume traded on the right side
     ax_volume = ax_main.twinx()
     lims = ax_main.get_xlim()
@@ -148,7 +224,7 @@ def main():
     ax_main.set_ylim(y[i].min()-5, y[i].max()+5)
     # ax_main.set_ylim(ymin=150)
     # ax_volume.bar(np.arange(len(data)), data.iloc[:,3], color='orange', alpha=0.5, label='Closing Prices')
-    ax_main.bar(control_points[:,0], data.iloc[:,3], color='orange', alpha=0.5, label='Closing Prices')
+    ax_main.bar(control_points[:,0],control_points[:,1], color='orange', alpha=0.5, label='Closing Prices')
     ax_main.set_ylabel('Closing Prices', color='orange')
 
     # Setting labels and legend
@@ -157,7 +233,7 @@ def main():
     ax_main.set_xlabel('Date')
     ax_main.set_ylabel('Closing Prices')
     ax_main.legend(loc='upper left')
-    plt.title('Stock Prices with B-spline Approximation and Volume Traded')
+    plt.title('Stock Prices with T-2-B-spline Approximation and Volume Traded')
     plt.gcf().autofmt_xdate()
     plt.show()
     # # Plotting
