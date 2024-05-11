@@ -2,6 +2,8 @@ import re
 
 import numpy as np
 from scipy.interpolate import CubicSpline
+
+from Python.b_spline import b_spline_curve
 from plotting import plot_basis
 from preset_figure import spiral, duck, star
 
@@ -121,22 +123,23 @@ knots=u()
 
 #
 
-# Generate points along the curve
-import time
-
-start = time.time()
-
-
-
-
-num_points = 500
-space=50
-curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, space, num_points)])
-
-
-end = time.time()
-print(end - start)
-curve_points =curve_points[~np.all(curve_points==0, axis=1)]
-# curve_points=curve_points[:333]
-
-plot_basis(control_points,curve_points)
+# # Generate points along the curve
+# import time
+#
+# start = time.time()
+#
+#
+#
+#
+# num_points = 500
+# space=50
+# curve_points= np.array([t_2_b_spline_curve(control_points, degree, knots, t, alpha) for t in np.linspace(0, space, num_points)])
+# # curve_points= np.array([b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, space, num_points)])
+#
+#
+# end = time.time()
+# print(end - start)
+# curve_points =curve_points[~np.all(curve_points==0, axis=1)]
+# # curve_points=curve_points[:333]
+#
+# plot_basis(control_points,curve_points)

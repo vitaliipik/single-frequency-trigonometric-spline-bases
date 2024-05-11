@@ -156,6 +156,8 @@ knots=u()
 # knots=t
 # alpha=np.pi/4
 
+
+
 curve_points_b= np.array([ b_spline_curve(control_points[:-1], degree, knots, t) for t in np.linspace(0, space_end, num_points)])
 curve_points_b =curve_points_b[~np.all(curve_points_b==0, axis=1)]
 

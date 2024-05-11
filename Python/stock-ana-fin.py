@@ -1,7 +1,6 @@
 import numpy as np
 import yfinance as yf
 
-from Python.b_spline import b_spline_curve
 from Python.plotting import plot_basis, line_plot_upd, bar_plot, bar_plot_upt
 from t_2_b_spline_iterative import t_2_b_spline_curve
 
@@ -66,11 +65,10 @@ def main():
     y = data.iloc[:, 2].astype('float64')
     control_points = np.array([[x_i, y_i] for x_i, y_i in zip(x, y)])
     degree = 2
-    control_points=duck()
     p = len(control_points) - 1
     # alpha = np.pi / 4
     alpha = np.pi / 2
-    alpha = 1
+    # alpha = 1
     # alpha = np.pi-1e-10
     # alpha = 1e-10
 
@@ -93,13 +91,45 @@ def main():
 
     knots = u()
 
+    def stock_graph(control_points,curve_points,x,y,text='Stock Prices with T-2-B-spline Approximation and Volume Traded - 1e7 curve points'):
+        # Plotting
+        size=25
+        fig, ax_main = plt.subplots(figsize=(25, 10))
+        plt.rcParams.update({'font.size': size})
+        # ax_main.plot(curve_points[:,0], curve_points[:,1], 'ro', label='B-spline Approximation')
 
+        # ax_main.plot(x, data.iloc[:, 3], 'bo-', label='Closing Prices')
+        ax_main.plot(curve_points[:, 0], curve_points[:, 1], 'r-', label='T-2-B-spline Approximation')
+        # ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='Closing price')
+        # Adding volume traded on the right side
+        labels = [item.get_text() for item in ax_main.get_yticklabels()]
+        ax_main.set_yticklabels(labels,fontsize=size)
+        ax_volume = ax_main.twinx()
+        lims = ax_main.get_xlim()
+        i = np.where((x > lims[0]) & (x < lims[1]))[0]
+        ax_main.set_ylim(y[i].min() - 5, y[i].max() + 5)
+        # ax_main.set_ylim(ymin=150)
+        # ax_volume.bar(np.arange(len(data)), data.iloc[:,3], color='orange', alpha=0.5, label='Closing Prices')
+        ax_main.bar(control_points[:, 0], control_points[:, 1], color='orange', alpha=0.5, label='Closing Prices')
+        ax_main.set_ylabel('Closing Prices', color='orange')
+
+        # Setting labels and legend
+        ax_main.set_xticks(x[::10])
+        # ax_main.set_xticklabels(([i[:9] for str(i) in data.index[::10]]), fontsize=size)
+        ax_main.set_xticklabels(([i.strftime("%d/%m/%Y") for i in data.index[::10]]), fontsize=size)
+        # ax_main.set_xticklabels(data.index[::10].format("%d/%m/%Y/"), fontsize=size)
+        ax_main.set_xlabel('Date', fontsize=30)
+        ax_main.set_ylabel('Closing Prices', fontsize=size)
+        # ax_main.set_ytickslabels( fontsize=20)
+        ax_main.legend(loc='upper left')
+        plt.title(text, fontsize=size)
+        plt.gcf().autofmt_xdate()
+        plt.show()
 
     write_points(control_points, INPUT_FILE_CONTROL_POINTS)
     write_knots(knots, INPUT_FILE_KNOTS)
 
     space = 1000
-    # space = 100
 
     # command = ["mpiexec", "-np", str(num_procs), "./cpp/hello-world", str(N)]
     # result = subprocess.run(command, capture_output=True, text=True)
@@ -113,10 +143,6 @@ def main():
     result = subprocess.run(command, capture_output=True, text=True)
     print(result)
 
-    command = ["wsl", "g++", "-Wall", "-g", "-o", f"{WSL_DIR}/openmp-b-spline", f"{WSL_DIR}/b-spline-openmp.cpp",f"-fopenmp"]
-    result = subprocess.run(command, capture_output=True, text=True)
-    print(result)
-
     command = ["wsl", "nvcc", f"{WSL_DIR}/cuda-t-2-b.cu", "-o", f"{WSL_DIR}/a.out"]
     result = subprocess.run(command, capture_output=True, text=True)
     print(result)
@@ -127,12 +153,8 @@ def main():
     space_array = [1e2,1e3,1e4]
     space_array = [1e2,1e4,1e6,1e7]
     space_array = [1e2,1e4,1e6]
-    space_array = [4e2,4e4,4e6,4e7]
-    space_array = [4e5]
-    # space_array = [16e2,16e4,16e6,16e7]
-
-    # space_array = [1e2, 1e4, 1e6, 1e7]
-    # space_array = [1e2]
+    space_array = [1e7]
+    # space_array = [1e5]
     # space_array = [1e2,1e3]
     thread=[2,4,8,16]
     thread=[4]
@@ -151,31 +173,17 @@ def main():
         curve_points_t_b=np.array(read_points(OUTPUT_FILE))
         curve_points_t_b = curve_points_t_b[~np.all(curve_points_t_b == 0, axis=1)]
 
-        command2 = ["wsl", fr"{WSL_DIR}/openmp-b-spline", str(degree), str(i), str(alpha), str(space),
-                                    INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS, str(16)]
-        result = subprocess.run(command2, capture_output=True, text=True)
-        print(result)
-        curve_points_b = np.array(read_points(OUTPUT_FILE))
-        curve_points_b= curve_points_b[~np.all(curve_points_b == 0, axis=1)]
-        plot_basis(control_points,curve_points_b,text="B-spline-curve")
-
-        error2 = np.linalg.norm(curve_points_t_b[:int(i/4)] - curve_points_b[:int(i/4)], axis=1)  # Error between result1 and result3
-        error2 = error2[5:]
-        # error3 = np.linalg.norm(curve_points_t_2_b - curve_points_t_b, axis=1)  # Error between result2 and result3
-        print(np.sum(error2) / len(error2))
-        # Plotting
-        plt.figure(figsize=(8, 6))
-        # plt.plot(error1, label='Error between Algorithm 1 and 2')
-        plt.plot(error2, label='Error between scipy and t-2-b-spline')
-        # plt.plot(error3, label='Error between Algorithm 2 and 3')
-        plt.xlabel('Point Index')
-        plt.ylabel('Error')
-        plt.title('Error Comparison')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
-        # curve_points_b = curve_points_b[~np.all(curve_points_b == 0, axis=1)]
+        # command2 = ["wsl", fr"{WSL_DIR}/openmp-b-spline", str(degree), str(i), str(alpha), str(space),
+        #                             INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS, str(16)]
+        # result = subprocess.run(command2, capture_output=True, text=True)
+        # print(result)
+        # curve_points_b = np.array(read_points(OUTPUT_FILE))
+        # curve_points_b= curve_points_b[~np.all(curve_points_b == 0, axis=1)]
+        # # plot_basis(control_points,curve_points_b,text="B-spline-curve")
+        # # curve_points =np.array([b_spline_curve(control_points, degree, knots, t) for t in np.linspace(0, 1000, 40000)])
+        # # curve_points_b = curve_points[~np.all(curve_points == 0, axis=1)]
+        # # stock_graph(control_points,curve_points_b,x,y,text="b-spline")
+        #
         # for j_i,j in enumerate(thread):
         #
         #
@@ -192,45 +200,18 @@ def main():
         # result = subprocess.run(command2, capture_output=True, text=True)
         # result_arr.iloc[index, 6] = float(result.stdout)
         result_arr.iloc[index, 6] = array_linear[index]
-        # command2 = ["wsl", fr"{WSL_DIR}/a.out", str(degree), str(i), str(alpha), str(space),
-        #             INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
-        # result = subprocess.run(command2, capture_output=True, text=True)
+        command2 = ["wsl", fr"{WSL_DIR}/a.out", str(degree), str(i), str(alpha), str(space),
+                    INPUT_FILE_CONTROL_POINTS_WS, INPUT_FILE_KNOTS_WS, OUTPUT_FILE_WS]
+        result = subprocess.run(command2, capture_output=True, text=True)
         curve_points = np.array(read_points(OUTPUT_FILE))
         curve_points = curve_points[~np.all(curve_points == 0, axis=1)]
-
 
         # line_plot_upd(result_arr)
         # bar_plot(speedups,space_array,y_tick=True)
         # bar_plot(effect,space_array,text="effectivity")
         # # bar_plot_upt(speedups,space_array)
         # line_plot(result_arr)
-        # Plotting
-        fig, ax_main = plt.subplots(figsize=(20, 15))
-
-        # ax_main.plot(curve_points[:,0], curve_points[:,1], 'ro', label='B-spline Approximation')
-
-        # ax_main.plot(x, data.iloc[:, 3], 'bo-', label='Closing Prices')
-        ax_main.plot(curve_points[:, 0], curve_points[:, 1], 'r-', label='T-2-B-spline Approximation')
-        # ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='Closing price')
-        # Adding volume traded on the right side
-        ax_volume = ax_main.twinx()
-        lims = ax_main.get_xlim()
-        iter = np.where((x > lims[0]) & (x < lims[1]))[0]
-        ax_main.set_ylim(y.min() - 5, y[iter].max() + 5)
-        # ax_main.set_ylim(ymin=150)
-        # ax_volume.bar(np.arange(len(data)), data.iloc[:,3], color='orange', alpha=0.5, label='Closing Prices')
-        ax_main.bar(control_points[:, 0], control_points[:, 1], color='orange', alpha=0.5, label='Closing Prices')
-        ax_main.set_ylabel('Closing Prices', color='orange')
-
-        # Setting labels and legend
-        ax_main.set_xticks(x[::10])
-        ax_main.set_xticklabels(data.index[::10])
-        ax_main.set_xlabel('Date')
-        ax_main.set_ylabel('Closing Prices')
-        ax_main.legend(loc='upper left')
-        plt.title('Stock Prices with T-2-B-spline Approximation and Volume Traded')
-        plt.gcf().autofmt_xdate()
-        plt.show()
+        stock_graph(control_points,curve_points,x,y)
         print(result)
 
     print(result_arr[list(result_arr.columns[1:])])
@@ -252,57 +233,7 @@ def main():
     # bar_plot(effect,space_array,text="effectivity")
     # # bar_plot_upt(speedups,space_array)
     # line_plot(result_arr)
-    # Plotting
-    fig, ax_main = plt.subplots(figsize=(25, 6))
-
-    # ax_main.plot(curve_points[:,0], curve_points[:,1], 'ro', label='B-spline Approximation')
-
-    # ax_main.plot(x, data.iloc[:, 3], 'bo-', label='Closing Prices')
-    ax_main.plot(curve_points[:,0], curve_points[:,1], 'r-', label='T-2-B-spline Approximation')
-    # ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='Closing price')
-    # Adding volume traded on the right side
-    ax_volume = ax_main.twinx()
-    lims = ax_main.get_xlim()
-    i = np.where((x > lims[0]) & (x < lims[1]))[0]
-    ax_main.set_ylim(y[i].min()-5, y[i].max()+5)
-    # ax_main.set_ylim(ymin=150)
-    # ax_volume.bar(np.arange(len(data)), data.iloc[:,3], color='orange', alpha=0.5, label='Closing Prices')
-    ax_main.bar(control_points[:,0],control_points[:,1], color='orange', alpha=0.5, label='Closing Prices')
-    ax_main.set_ylabel('Closing Prices', color='orange')
-
-    # Setting labels and legend
-    ax_main.set_xticks(x[::10])
-    ax_main.set_xticklabels(data.index[::10])
-    ax_main.set_xlabel('Date')
-    ax_main.set_ylabel('Closing Prices')
-    ax_main.legend(loc='upper left')
-    plt.title('Stock Prices with T-2-B-spline Approximation and Volume Traded')
-    plt.gcf().autofmt_xdate()
-    plt.show()
-    # # Plotting
-    # fig, ax_main = plt.subplots(figsize=(25, 6))
-    # ax_main.plot(curve_points[:,0], curve_points[:,1], 'r-', label='B-spline Approximation')
-    # ax_main.plot(control_points[:,0], control_points[:,1], 'bo', label='B-spline Approximation')
-    # # ax_main.plot(curve_points[:,0], curve_points[:,1], 'ro', label='B-spline Approximation')
-    #
-    # # ax_main.plot(x, data.iloc[:, 3], 'bo-', label='Closing Prices')
-    #
-    # # Adding volume traded on the right side
-    # ax_volume = ax_main.twinx()
-    # ax_volume.bar(np.arange(len(data)), y, color='orange', alpha=0.5, label='Volume Traded')
-    # ax_volume.set_ylabel('Volume Traded', color='orange')
-    #
-    # # Setting labels and legend
-    # ax_main.set_xticks(x[::10])
-    # ax_main.set_xticklabels(data.index[::10])
-    # ax_main.set_xlabel('Date')
-    # ax_main.set_ylabel('Closing Prices')
-    # ax_main.legend(loc='upper left')
-    # plt.title('Stock Prices with B-spline Approximation and Volume Traded')
-    # plt.gcf().autofmt_xdate()
-    # plt.show()
-    # plot_basis(control_points,curve_points)
-    # plt.show()
+    stock_graph(control_points,curve_points,x,y)
 
 
 if __name__ == '__main__':

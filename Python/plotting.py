@@ -6,7 +6,7 @@ from mpl_interactions import zoom_factory, panhandler
 from mpl_interactions import interactive_plot
 
 
-def plot_basis(control_points, curve_points, is_control=True):
+def plot_basis(control_points, curve_points, is_control=True,text='tb-spline Curve'):
     if len(curve_points[0]) == 3:
 
         # Create a 3D plot
@@ -36,11 +36,11 @@ def plot_basis(control_points, curve_points, is_control=True):
         if is_control:
             plt.plot(control_points[:, 0], control_points[:, 1], 'ro-', label='Control Points')
 
-        plt.plot(curve_points[:, 0], curve_points[:, 1], 'b-', label='tb-spline Curve')
+        plt.plot(curve_points[:, 0], curve_points[:, 1], 'b-', label=text)
         plt.legend()
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title('tB-spline Curve')
+        plt.title(text)
         plt.grid(True)
         plt.axis('equal')
     plt.show()
